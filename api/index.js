@@ -9,6 +9,7 @@ const Booking = require('./models/Booking.js');
 const cookieParser = require('cookie-parser');
 const imageDownloader = require('image-downloader');
 // const {S3Client, PutObjectCommand} = require('@aws-sdk/client-s3');
+const cloudinary = require('./cloudinary/cloudinary.js')
 const multer = require('multer');
 const fs = require('fs');
 const mime = require('mime-types');
@@ -31,7 +32,27 @@ app.use(cors({
 
 mongoose.connect(process.env.MONGO_URL);
 
-// it is function that upload to s3 bucket
+// Define an async function to upload files to Cloudinary
+// async function uploadToCloudinary(path, originalFilename, mimetype) {
+//   // Split the original filename by dot and get the extension
+//   const parts = originalFilename.split('.');
+//   const ext = parts[parts.length - 1];
+//   // Generate a new filename with the current timestamp and the extension
+//   const newFilename = Date.now() + '.' + ext;
+//   // Upload the file to Cloudinary using the upload method
+//   // You can specify additional options such as folder, public_id, tags, etc.
+//   // See https://cloudinary.com/documentation/node_image_upload for more details
+//   const result = await cloudinary.uploader.upload(path, {
+//     folder: 'my_folder',
+//     public_id: newFilename,
+//     tags: ['my_tag'],
+//     resource_type: 'auto' // Automatically detect the resource type
+//   });
+//   // Return the secure URL of the uploaded file
+//   return result.secure_url;
+// }
+
+// it is function that upload to s3 bucket : Define an async function to upload files to s3 bucket
 // async function uploadToS3(path, originalFilename, mimetype) {
 //   const client = new S3Client({
 //     region: 'us-east-1',
@@ -52,6 +73,10 @@ mongoose.connect(process.env.MONGO_URL);
 //   }));
 //   return `https://${bucket}.s3.amazonaws.com/${newFilename}`;
 // }
+
+
+
+
 // chat gpt refined code
 // function getUserDataFromReq(req) {
 //   return new Promise((resolve, reject) => {
@@ -137,7 +162,7 @@ app.get('/profile', (req,res) => {
 app.post('/logout', (req,res) => {
   res.cookie('token', '').json(true);
 });
-
+//=============================================local upload by link=======================================================
 app.post('/upload-by-link', async (req,res) => {
   const {link} = req.body;
   const newName = 'photo' + Date.now() + '.jpg';
@@ -147,7 +172,7 @@ app.post('/upload-by-link', async (req,res) => {
   });
   res.json(newName);
 });
-
+//=============================================s3 upload by link===============================================================
 // app.post('/api/upload-by-link', async (req,res) => {
 //   const {link} = req.body;
 //   const newName = 'photo' + Date.now() + '.jpg';
@@ -159,6 +184,7 @@ app.post('/upload-by-link', async (req,res) => {
 //   res.json(url);
 // });
 
+//========================================local upload multer============================================================
 // this code is used when we uploads to local uploads directory but it contains problem of upload directory
 // const photosMiddleware = multer({dest:'uploads/'});
 // app.post('/upload', photosMiddleware.array('photos', 100), (req,res) => {
@@ -176,7 +202,7 @@ app.post('/upload-by-link', async (req,res) => {
 /*this problem is resolved using the storage option of multer to specify the destination and filename of the uploaded files. 
 This way, you don’t need to use fs.renameSync to change the file extension after uploading. 
 You can also use the fileFilter option to validate the file type before uploading*/
-
+//===================================================Refined code of above======================================================================================================
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads/')
@@ -202,7 +228,7 @@ app.post('/upload', photosMiddleware.array('photos', 100), (req,res) => {
   const uploadedFiles = req.files.map(file => file.filename)
   res.json(uploadedFiles)
 })
-
+//=====================================================s3 upload multer=========================================================================================================
 // this code is used when we uploads to s3 bucket
 // const photosMiddleware = multer({dest:'/tmp'});
 // app.post('/api/upload', photosMiddleware.array('photos', 100), async (req,res) => {
